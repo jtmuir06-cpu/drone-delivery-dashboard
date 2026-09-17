@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AeroDash — Fleet Data Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0B1220; --panel:#121B30; --panel-alt:#182643; --panel-alt2:#1C2C4E;
+    --border:#26314F; --border-soft:#1E2A46; --text:#E8EDF7; --text-dim:#8C9AB8; --text-faint:#5C6C8F;
+    --accent:#33C48A; --accent-dim:#1C4E3B; --accent-text:#7BE6B8;
+    --warn:#E8A33D; --warn-dim:#4A3A19; --danger:#EF6461; --danger-dim:#4A2321;
+    --indigo:#7C8CF5; --indigo-dim:#25285A;
+    --font-head:'Space Grotesk',sans-serif; --font-body:'Inter',sans-serif; --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 32px 56px;}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand-mark{width:30px;height:30px;border-radius:8px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;}
+  .brand-mark svg{width:16px;height:16px;}
+  .brand-name{font-family:var(--font-head);font-weight:600;font-size:15px;}
+  .brand-sub{font-size:11px;color:var(--text-faint);margin-top:1px;}
+  .back-link{font-size:12.5px;color:var(--text-dim);text-decoration:none;border:1px solid var(--border);border-radius:8px;padding:8px 12px;}
+  .back-link:hover{border-color:var(--border-soft);color:var(--text);}
+
+  .screen-head{margin-bottom:22px;}
+  .eyebrow{font-size:11px;color:var(--accent-text);font-family:var(--font-mono);margin:0 0 6px;}
+  .title{font-family:var(--font-head);font-size:22px;font-weight:600;margin:0 0 6px;}
+  .desc{font-size:13px;color:var(--text-dim);margin:0;max-width:620px;line-height:1.55;}
+
+  .filters{display:flex;gap:10px;margin:20px 0 18px;flex-wrap:wrap;}
+  .filter{background:var(--panel-alt);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text-dim);cursor:pointer;}
+  .filter.active{border-color:var(--accent);color:var(--accent-text);background:var(--accent-dim);}
+
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px;}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;}
+  .kpi-label{font-size:11px;color:var(--text-faint);margin-bottom:6px;}
+  .kpi-val{font-family:var(--font-mono);font-size:21px;font-weight:500;}
+  .kpi-delta{font-size:11px;margin-top:4px;}
+  .up{color:var(--accent-text);} .down{color:var(--danger);} .flat{color:var(--text-faint);}
+
+  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:16px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 20px;}
+  .card-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;}
+  .card-title{font-size:13px;font-weight:500;}
+  .card-sub{font-size:11px;color:var(--text-faint);}
+  .chart-box{position:relative;height:220px;}
+  .chart-box.short{height:180px;}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;color:var(--text-faint);font-weight:500;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border-soft);}
+  td{padding:10px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-dim);}
+  td.strong{color:var(--text);font-family:var(--font-mono);}
+  .pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-family:var(--font-mono);}
+  .pill-active{background:var(--accent-dim);color:var(--accent-text);}
+  .pill-warn{background:var(--warn-dim);color:var(--warn);}
+  .pill-ok{background:var(--panel-alt2);color:var(--text-dim);}
+  .pill-danger{background:var(--danger-dim);color:var(--danger);}
+
+  .alert-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-soft);font-size:12.5px;}
+  .alert-item:last-child{border-bottom:none;}
+  .alert-left{display:flex;align-items:center;gap:10px;}
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .dot-warn{background:var(--warn);} .dot-danger{background:var(--danger);} .dot-ok{background:var(--accent);}
+  .caption{font-size:11px;color:var(--text-faint);margin-top:12px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#7BE6B8" stroke-width="2"><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/><circle cx="12" cy="12" r="3"/></svg></div>
+      <div><div class="brand-name">AeroDash</div><div class="brand-sub">Fleet data dashboard</div></div>
+    </div>
+    <a class="back-link" href="index.html">&larr; Back to delivery flow prototype</a>
+  </div>
+
+  <div class="screen-head">
+    <p class="eyebrow">Operator analytics</p>
+    <h1 class="title">Fleet data dashboard</h1>
+    <p class="desc">Aggregated metrics across the drone fleet for the logistics/fleet-manager persona: delivery volume, on-time performance, battery health, and zone-level trends over the selected period.</p>
+  </div>
+
+  <div class="filters">
+    <div class="filter active">Last 7 days</div>
+    <div class="filter">Last 30 days</div>
+    <div class="filter">Today</div>
+    <div class="filter">All zones</div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label">Deliveries completed</div><div class="kpi-val">412</div><div class="kpi-delta up">+8.1% vs prior week</div></div>
+    <div class="kpi"><div class="kpi-label">On-time rate</div><div class="kpi-val">96.2%</div><div class="kpi-delta up">+1.4%</div></div>
+    <div class="kpi"><div class="kpi-label">Avg delivery time</div><div class="kpi-val">11:42</div><div class="kpi-delta down">+0:38</div></div>
+    <div class="kpi"><div class="kpi-label">Drop accuracy</div><div class="kpi-val">0.9 m</div><div class="kpi-delta flat">avg offset from pin</div></div>
+    <div class="kpi"><div class="kpi-label">Aborted flights</div><div class="kpi-val">3</div><div class="kpi-delta flat">0.7% of flights</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-head"><span class="card-title">Deliveries per day</span><span class="card-sub">Completed vs delayed</span></div>
+      <div class="chart-box"><canvas id="volumeChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Delivery status mix</span><span class="card-sub">Last 7 days</span></div>
+      <div class="chart-box"><canvas id="statusChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="card-head"><span class="card-title">On-time rate trend</span></div>
+      <div class="chart-box short"><canvas id="onTimeChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Fleet battery health</span></div>
+      <div class="chart-box short"><canvas id="batteryChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Avg delivery time by zone</span></div>
+      <div class="chart-box short"><canvas id="zoneChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-head"><span class="card-title">Active fleet</span><span class="card-sub">14 drones in operation</span></div>
+      <table>
+        <tr><th>Drone</th><th>Zone</th><th>Status</th><th>Battery</th><th>ETA</th></tr>
+        <tr><td class="strong">DR-014</td><td>Downtown</td><td><span class="pill pill-active">In transit</span></td><td class="strong">81%</td><td>4 min</td></tr>
+        <tr><td class="strong">DR-009</td><td>West Ashley</td><td><span class="pill pill-warn">Wind delay</span></td><td class="strong">63%</td><td>9 min</td></tr>
+        <tr><td class="strong">DR-021</td><td>Downtown</td><td><span class="pill pill-ok">Approaching</span></td><td class="strong">55%</td><td>2 min</td></tr>
+        <tr><td class="strong">DR-003</td><td>Mount Pleasant</td><td><span class="pill pill-ok">Delivered</span></td><td class="strong">72%</td><td>&mdash;</td></tr>
+        <tr><td class="strong">DR-017</td><td>James Island</td><td><span class="pill pill-danger">Low battery</span></td><td class="strong">18%</td><td>RTB</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Alerts</span><span class="card-sub">Needs attention</span></div>
+      <div class="alert-item"><div class="alert-left"><span class="dot dot-danger"></span>DR-017 battery below 20% threshold</div><span class="card-sub">2 min ago</span></div>
+      <div class="alert-item"><div class="alert-left"><span class="dot dot-warn"></span>DR-009 delayed by 24 km/h crosswind</div><span class="card-sub">6 min ago</span></div>
+      <div class="alert-item"><div class="alert-left"><span class="dot dot-warn"></span>Geofence redraw requested, 7 Hasell St</div><span class="card-sub">18 min ago</span></div>
+      <div class="alert-item"><div class="alert-left"><span class="dot dot-ok"></span>DR-003 delivery confirmed on time</div><span class="card-sub">41 min ago</span></div>
+      <p class="caption">Surfacing low-battery and wind-delay alerts here supports the mental-workload and situation-awareness goals from the Part 3 evaluation framework &mdash; the operator doesn't have to hunt through individual drone screens to catch a developing problem.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  Chart.defaults.color = '#8C9AB8';
+  Chart.defaults.font.family = 'Inter';
+  Chart.defaults.borderColor = '#1E2A46';
+
+  new Chart(document.getElementById('volumeChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets: [
+        { label:'Completed', data:[48,52,55,61,58,72,66], backgroundColor:'#33C48A', borderRadius:4, stack:'a' },
+        { label:'Delayed', data:[3,2,4,2,5,3,2], backgroundColor:'#E8A33D', borderRadius:4, stack:'a' }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } } },
+      scales:{ x:{ grid:{ display:false } }, y:{ grid:{ color:'#1E2A46' } } }
+    }
+  });
+
+  new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['On time','Minor delay','Aborted'],
+      datasets: [{ data:[388,21,3], backgroundColor:['#33C48A','#E8A33D','#EF6461'], borderColor:'#121B30', borderWidth:2 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, font:{size:11} } } }
+    }
+  });
+
+  new Chart(document.getElementById('onTimeChart'), {
+    type: 'line',
+    data: {
+      labels: ['W1','W2','W3','W4','W5','W6'],
+      datasets: [{ data:[92.1,93.4,94.0,95.1,94.8,96.2], borderColor:'#33C48A', backgroundColor:'rgba(51,196,138,0.12)', fill:true, tension:0.35, pointRadius:0, borderWidth:2 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ display:false } }, y:{ grid:{ color:'#1E2A46' }, min:88, max:100 } }
+    }
+  });
+
+  new Chart(document.getElementById('batteryChart'), {
+    type: 'bar',
+    data: {
+      labels: ['0-20%','21-40%','41-60%','61-80%','81-100%'],
+      datasets: [{ data:[1,2,3,5,3], backgroundColor:'#7C8CF5', borderRadius:4 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, indexAxis:'y',
+      plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ color:'#1E2A46' } }, y:{ grid:{ display:false } } }
+    }
+  });
+
+  new Chart(document.getElementById('zoneChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Downtown','W. Ashley','Mt Pleasant','James Is.'],
+      datasets: [{ data:[9.8,12.6,10.9,14.2], backgroundColor:'#33C48A', borderRadius:4 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{ x:{ grid:{ display:false } }, y:{ grid:{ color:'#1E2A46' }, title:{ display:true, text:'minutes', color:'#5C6C8F', font:{size:10} } } }
+    }
+  });
+</script>
+</body>
+</html>

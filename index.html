@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AeroDash — Drone Delivery Data Dashboard Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1220;
+    --panel:#121B30;
+    --panel-alt:#182643;
+    --panel-alt2:#1C2C4E;
+    --border:#26314F;
+    --border-soft:#1E2A46;
+    --text:#E8EDF7;
+    --text-dim:#8C9AB8;
+    --text-faint:#5C6C8F;
+    --accent:#33C48A;
+    --accent-dim:#1C4E3B;
+    --accent-text:#7BE6B8;
+    --warn:#E8A33D;
+    --warn-dim:#4A3A19;
+    --danger:#EF6461;
+    --danger-dim:#4A2321;
+    --indigo:#7C8CF5;
+    --indigo-dim:#25285A;
+    --radius:10px;
+    --font-head:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);}
+  .app{display:flex;min-height:100vh;}
+
+  .rail{width:236px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:24px 16px;display:flex;flex-direction:column;gap:28px;}
+  .brand{display:flex;align-items:center;gap:10px;padding:0 4px;}
+  .brand-mark{width:30px;height:30px;border-radius:8px;background:var(--accent-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .brand-mark svg{width:16px;height:16px;}
+  .brand-name{font-family:var(--font-head);font-weight:600;font-size:15px;letter-spacing:.2px;}
+  .brand-sub{font-size:11px;color:var(--text-faint);margin-top:1px;}
+
+  .stepper{display:flex;flex-direction:column;gap:2px;}
+  .step-label{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;padding:0 10px 8px;}
+  .step{display:flex;align-items:flex-start;gap:10px;padding:10px 10px;border-radius:var(--radius);cursor:pointer;border:1px solid transparent;background:transparent;text-align:left;width:100%;color:var(--text);font-family:var(--font-body);}
+  .step:hover{background:var(--panel-alt);}
+  .step.active{background:var(--panel-alt2);border-color:var(--border);}
+  .step-num{width:20px;height:20px;border-radius:50%;background:var(--panel-alt);color:var(--text-dim);font-size:11px;font-family:var(--font-mono);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+  .step.active .step-num{background:var(--accent);color:#06231A;}
+  .step-text{display:flex;flex-direction:column;gap:1px;}
+  .step-title{font-size:13px;font-weight:500;}
+  .step-sub{font-size:11px;color:var(--text-faint);}
+  .step.active .step-title{color:var(--text);}
+
+  .rail-foot{margin-top:auto;padding:12px 10px;border-top:1px solid var(--border-soft);}
+  .persona{display:flex;align-items:center;gap:9px;}
+  .avatar{width:26px;height:26px;border-radius:50%;background:var(--indigo-dim);color:var(--indigo);font-size:11px;font-family:var(--font-mono);display:flex;align-items:center;justify-content:center;}
+  .persona-text{font-size:12px;color:var(--text-dim);}
+
+  .main{flex:1;padding:28px 36px 48px;max-width:1080px;}
+  .screen{display:none;}
+  .screen.active{display:block;}
+  .screen-head{margin-bottom:22px;}
+  .eyebrow{font-size:11px;color:var(--accent-text);font-family:var(--font-mono);margin:0 0 6px;}
+  .screen-title{font-family:var(--font-head);font-size:22px;font-weight:600;margin:0 0 6px;}
+  .screen-desc{font-size:13px;color:var(--text-dim);margin:0;max-width:560px;line-height:1.55;}
+
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;}
+  .grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+
+  label{display:block;font-size:12px;color:var(--text-dim);margin:0 0 6px;}
+  .field{margin-bottom:16px;}
+  input[type=text],input[type=tel],select,textarea{
+    width:100%;background:var(--panel-alt);border:1px solid var(--border);border-radius:8px;
+    color:var(--text);padding:10px 12px;font-size:13px;font-family:var(--font-body);
+  }
+  textarea{resize:vertical;min-height:64px;}
+  .zone-options{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+  .zone-opt{border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;font-size:12.5px;color:var(--text-dim);}
+  .zone-opt.selected{border-color:var(--accent);background:var(--accent-dim);color:var(--accent-text);}
+  .zone-opt-title{font-weight:500;color:var(--text);display:block;margin-bottom:2px;}
+  .zone-opt.selected .zone-opt-title{color:var(--accent-text);}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--panel-alt);color:var(--text);font-family:var(--font-body);}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#06231A;}
+  .btn-danger{background:var(--danger);border-color:var(--danger);color:#3C0F0E;}
+  .btn-ghost{background:transparent;}
+  .btn-row{display:flex;gap:10px;margin-top:18px;}
+
+  .kpi{background:var(--panel-alt);border-radius:12px;padding:14px 16px;}
+  .kpi-label{font-size:11.5px;color:var(--text-faint);margin-bottom:6px;}
+  .kpi-val{font-family:var(--font-mono);font-size:22px;font-weight:500;}
+  .kpi-delta{font-size:11px;margin-top:4px;}
+  .up{color:var(--accent-text);} .down{color:var(--danger);}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th{text-align:left;color:var(--text-faint);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border-soft);}
+  td{padding:10px 10px;border-bottom:1px solid var(--border-soft);color:var(--text-dim);}
+  td.strong{color:var(--text);font-family:var(--font-mono);}
+  .pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-family:var(--font-mono);}
+  .pill-active{background:var(--accent-dim);color:var(--accent-text);}
+  .pill-warn{background:var(--warn-dim);color:var(--warn);}
+  .pill-ok{background:var(--panel-alt2);color:var(--text-dim);}
+
+  .map{position:relative;background:#0E1830;border:1px solid var(--border);border-radius:12px;overflow:hidden;height:320px;}
+  .map svg{width:100%;height:100%;display:block;}
+
+  .tele{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px;}
+  .tele-item{background:var(--panel-alt);border-radius:10px;padding:12px 14px;}
+  .tele-label{font-size:11px;color:var(--text-faint);margin-bottom:4px;}
+  .tele-val{font-family:var(--font-mono);font-size:16px;}
+
+  .timeline{display:flex;justify-content:space-between;margin-top:18px;position:relative;}
+  .timeline:before{content:"";position:absolute;top:9px;left:14px;right:14px;height:2px;background:var(--border-soft);}
+  .tl-step{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:1;width:80px;}
+  .tl-dot{width:18px;height:18px;border-radius:50%;background:var(--panel-alt2);border:2px solid var(--border);}
+  .tl-step.done .tl-dot{background:var(--accent);border-color:var(--accent);}
+  .tl-step.now .tl-dot{background:var(--bg);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+  .tl-label{font-size:10.5px;color:var(--text-faint);text-align:center;}
+  .tl-step.done .tl-label,.tl-step.now .tl-label{color:var(--text-dim);}
+
+  .notif{display:flex;gap:10px;padding:12px;border-radius:10px;background:var(--panel-alt);margin-bottom:8px;}
+  .notif-ico{width:28px;height:28px;border-radius:50%;background:var(--accent-dim);color:var(--accent-text);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;}
+  .notif-title{font-size:12.5px;font-weight:500;}
+  .notif-time{font-size:11px;color:var(--text-faint);}
+
+  .abort-panel{border:1px solid var(--danger);background:var(--danger-dim);border-radius:14px;padding:20px;}
+  .alert-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12.5px;}
+  .alert-row:last-child{border-bottom:none;}
+
+  .caption{font-size:11px;color:var(--text-faint);margin-top:10px;line-height:1.5;}
+  .flow-note{background:var(--panel-alt);border-left:3px solid var(--indigo);border-radius:0 8px 8px 0;padding:10px 14px;font-size:12px;color:var(--text-dim);margin-bottom:18px;}
+
+  @keyframes flyPath{
+    0%{ offset-distance:0%; }
+    100%{ offset-distance:100%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="rail">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#7BE6B8" stroke-width="2"><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">AeroDash</div>
+        <div class="brand-sub">Drone delivery data dashboard</div>
+      </div>
+    </div>
+
+    <div class="stepper">
+      <div class="step-label">Delivery flow</div>
+      <button class="step active" data-screen="0"><span class="step-num">1</span><span class="step-text"><span class="step-title">Fleet dashboard</span><span class="step-sub">Operator overview</span></span></button>
+      <button class="step" data-screen="1"><span class="step-num">2</span><span class="step-text"><span class="step-title">Address &amp; drop-zone</span><span class="step-sub">Input</span></span></button>
+      <button class="step" data-screen="2"><span class="step-num">3</span><span class="step-text"><span class="step-title">Drop-zone selection</span><span class="step-sub">Geofence</span></span></button>
+      <button class="step" data-screen="3"><span class="step-num">4</span><span class="step-text"><span class="step-title">Live tracking</span><span class="step-sub">Map + telemetry</span></span></button>
+      <button class="step" data-screen="4"><span class="step-num">5</span><span class="step-text"><span class="step-title">Confirmation</span><span class="step-sub">Notifications</span></span></button>
+      <button class="step" data-screen="5"><span class="step-num">6</span><span class="step-text"><span class="step-title">Emergency abort</span><span class="step-sub">Return-to-base</span></span></button>
+    </div>
+
+    <div class="rail-foot">
+      <div class="persona">
+        <div class="avatar">FM</div>
+        <div class="persona-text">Fleet manager view</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- SCREEN 0: FLEET DASHBOARD -->
+    <div class="screen active" id="screen-0">
+      <div class="screen-head">
+        <p class="eyebrow">Operator view</p>
+        <h1 class="screen-title">Fleet dashboard</h1>
+        <p class="screen-desc">Real-time overview for the logistics/fleet manager persona: active deliveries, on-time performance, and drone health across the fleet.</p>
+      </div>
+
+      <div class="grid4" style="margin-bottom:16px;">
+        <div class="kpi"><div class="kpi-label">Active deliveries</div><div class="kpi-val">14</div><div class="kpi-delta up">+3 vs yesterday</div></div>
+        <div class="kpi"><div class="kpi-label">On-time rate</div><div class="kpi-val">96.2%</div><div class="kpi-delta up">+1.4%</div></div>
+        <div class="kpi"><div class="kpi-label">Avg delivery time</div><div class="kpi-val">11:42</div><div class="kpi-delta down">+0:38</div></div>
+        <div class="kpi"><div class="kpi-label">Fleet battery avg</div><div class="kpi-val">78%</div><div class="kpi-delta up">nominal</div></div>
+      </div>
+
+      <div class="btn-row" style="margin-top:0;margin-bottom:16px;">
+        <a class="btn btn-primary" href="dashboard.html" style="text-decoration:none;">Open full data dashboard</a>
+      </div>
+
+      <div class="card">
+        <table>
+          <tr><th>Drone</th><th>Recipient</th><th>Status</th><th>Battery</th><th>ETA</th></tr>
+          <tr><td class="strong">DR-014</td><td>218 Rutledge Ave</td><td><span class="pill pill-active">In transit</span></td><td class="strong">81%</td><td>4 min</td></tr>
+          <tr><td class="strong">DR-009</td><td>44 Wentworth St</td><td><span class="pill pill-warn">Wind delay</span></td><td class="strong">63%</td><td>9 min</td></tr>
+          <tr><td class="strong">DR-021</td><td>7 Hasell St, Unit B</td><td><span class="pill pill-ok">Approaching</span></td><td class="strong">55%</td><td>2 min</td></tr>
+          <tr><td class="strong">DR-003</td><td>390 King St</td><td><span class="pill pill-ok">Delivered</span></td><td class="strong">72%</td><td>—</td></tr>
+        </table>
+      </div>
+      <p class="caption">This screen exists for the fleet-manager persona identified in customer development — it addresses the pain point of not having real-time visibility across simultaneous deliveries.</p>
+    </div>
+
+    <!-- SCREEN 1: ADDRESS & DROP ZONE INPUT -->
+    <div class="screen" id="screen-1">
+      <div class="screen-head">
+        <p class="eyebrow">Step 1 of delivery flow</p>
+        <h1 class="screen-title">Address &amp; drop-zone input</h1>
+        <p class="screen-desc">Recipient enters the delivery address and preferred drop location before a drone is dispatched.</p>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="field"><label>Delivery address</label><input type="text" value="218 Rutledge Ave, Charleston, SC"></div>
+          <div class="field"><label>Apartment / unit (optional)</label><input type="text" placeholder="Unit, floor, gate code"></div>
+          <div class="field"><label>Recipient phone</label><input type="tel" value="(843) 555-0148"></div>
+          <div class="field">
+            <label>Preferred drop-zone type</label>
+            <div class="zone-options">
+              <div class="zone-opt selected"><span class="zone-opt-title">Front porch</span>Visible from street</div>
+              <div class="zone-opt"><span class="zone-opt-title">Backyard</span>Requires gate access</div>
+              <div class="zone-opt"><span class="zone-opt-title">Package locker</span>Building-managed</div>
+              <div class="zone-opt"><span class="zone-opt-title">Custom pin</span>Draw on map, next step</div>
+            </div>
+          </div>
+          <div class="field"><label>Delivery notes (optional)</label><textarea placeholder="e.g. avoid the oak tree, dog in yard">Gate code 4471, no dog</textarea></div>
+          <div class="btn-row"><button class="btn btn-primary" onclick="goTo(2)">Continue to drop-zone selection</button></div>
+        </div>
+        <div class="card">
+          <label style="margin-bottom:10px;">Why we ask this</label>
+          <p class="caption" style="margin-top:0;">Customer development with recipients surfaced two recurring problems: packages dropped at the wrong entrance, and drones hesitating over unclear yards. Structured address + drop-zone fields reduce ambiguity before a flight is ever planned, directly targeting the address-accuracy and drop-zone-safety challenges from Part 1.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: DROP-ZONE SELECTION (GEOFENCE) -->
+    <div class="screen" id="screen-2">
+      <div class="screen-head">
+        <p class="eyebrow">Step 2 of delivery flow</p>
+        <h1 class="screen-title">Drop-zone selection</h1>
+        <p class="screen-desc">Recipient or dispatcher confirms the exact landing geofence on a satellite map, with obstacle and no-fly warnings surfaced automatically.</p>
+      </div>
+      <div class="grid2">
+        <div class="map">
+          <svg viewBox="0 0 400 320" preserveAspectRatio="none">
+            <rect width="400" height="320" fill="#0E1830"/>
+            <g stroke="#1C2C4E" stroke-width="1">
+              <line x1="0" y1="80" x2="400" y2="80"/><line x1="0" y1="160" x2="400" y2="160"/><line x1="0" y1="240" x2="400" y2="240"/>
+              <line x1="100" y1="0" x2="100" y2="320"/><line x1="200" y1="0" x2="200" y2="320"/><line x1="300" y1="0" x2="300" y2="320"/>
+            </g>
+            <rect x="150" y="120" width="100" height="70" fill="#182643" stroke="#26314F"/>
+            <circle cx="200" cy="150" r="42" fill="#1C4E3B" fill-opacity="0.55" stroke="#33C48A" stroke-width="2" stroke-dasharray="5 4"/>
+            <circle cx="200" cy="150" r="5" fill="#33C48A"/>
+            <text x="200" y="150" text-anchor="middle" dy="-52" font-family="IBM Plex Mono" font-size="10" fill="#7BE6B8">Confirmed drop-zone</text>
+            <g transform="translate(280,60)">
+              <rect width="70" height="26" rx="6" fill="#4A3A19"/>
+              <text x="35" y="17" text-anchor="middle" font-family="Inter" font-size="9" fill="#E8A33D">Tree canopy</text>
+            </g>
+            <circle cx="290" cy="60" r="0" fill="none"/>
+          </svg>
+        </div>
+        <div class="card">
+          <div class="tele" style="grid-template-columns:1fr;margin-top:0;">
+            <div class="tele-item"><div class="tele-label">Geofence radius</div><div class="tele-val">6.0 m</div></div>
+            <div class="tele-item"><div class="tele-label">Obstacle clearance</div><div class="tele-val">Clear — canopy 4.2 m N</div></div>
+            <div class="tele-item"><div class="tele-label">No-fly zone check</div><div class="tele-val">Pass</div></div>
+          </div>
+          <div class="btn-row"><button class="btn btn-primary" onclick="goTo(3)">Confirm zone &amp; dispatch</button><button class="btn btn-ghost">Redraw zone</button></div>
+          <p class="caption">Maps to the "error prevention" heuristic in Part 3: the app blocks dispatch until the geofence clears detected obstacles.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: LIVE TRACKING -->
+    <div class="screen" id="screen-3">
+      <div class="screen-head">
+        <p class="eyebrow">Step 3 of delivery flow</p>
+        <h1 class="screen-title">Live map tracking</h1>
+        <p class="screen-desc">Recipient and dispatcher both see real-time position, flight telemetry, and delivery-stage status.</p>
+      </div>
+      <div class="grid2">
+        <div>
+          <div class="map">
+            <svg viewBox="0 0 400 320" preserveAspectRatio="none">
+              <rect width="400" height="320" fill="#0E1830"/>
+              <g stroke="#1C2C4E" stroke-width="1">
+                <line x1="0" y1="100" x2="400" y2="100"/><line x1="0" y1="220" x2="400" y2="220"/>
+                <line x1="130" y1="0" x2="130" y2="320"/><line x1="280" y1="0" x2="280" y2="320"/>
+              </g>
+              <path id="route" d="M 40 260 C 100 180, 180 120, 340 60" fill="none" stroke="#26314F" stroke-width="3" stroke-dasharray="6 6"/>
+              <circle cx="40" cy="260" r="6" fill="#7C8CF5"/>
+              <text x="40" y="278" font-family="Inter" font-size="10" fill="#8C9AB8" text-anchor="middle">Depot</text>
+              <circle cx="340" cy="60" r="6" fill="#33C48A"/>
+              <text x="340" y="46" font-family="Inter" font-size="10" fill="#7BE6B8" text-anchor="middle">Drop-zone</text>
+              <g>
+                <circle r="7" fill="#E8A33D" style="offset-path:path('M 40 260 C 100 180, 180 120, 340 60'); animation:flyPath 6s linear infinite;"/>
+              </g>
+            </svg>
+          </div>
+          <div class="timeline">
+            <div class="tl-step done"><div class="tl-dot"></div><div class="tl-label">Preparing</div></div>
+            <div class="tl-step done"><div class="tl-dot"></div><div class="tl-label">Dispatched</div></div>
+            <div class="tl-step now"><div class="tl-dot"></div><div class="tl-label">In transit</div></div>
+            <div class="tl-step"><div class="tl-dot"></div><div class="tl-label">Approaching</div></div>
+            <div class="tl-step"><div class="tl-dot"></div><div class="tl-label">Delivered</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <label style="margin-bottom:0;">Telemetry — DR-014</label>
+          <div class="tele">
+            <div class="tele-item"><div class="tele-label">Altitude</div><div class="tele-val">38 m</div></div>
+            <div class="tele-item"><div class="tele-label">Ground speed</div><div class="tele-val">42 km/h</div></div>
+            <div class="tele-item"><div class="tele-label">Battery</div><div class="tele-val">81%</div></div>
+            <div class="tele-item"><div class="tele-label">ETA</div><div class="tele-val">00:04:12</div></div>
+          </div>
+          <div class="btn-row"><button class="btn btn-primary" onclick="goTo(4)">Simulate arrival</button><button class="btn btn-danger" onclick="goTo(5)">Emergency controls</button></div>
+          <p class="caption">Plain delivery language ("In transit", "Approaching") replaces drone jargon like RTL/GPS-lock, per the match-with-real-world-terms heuristic.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4: CONFIRMATION & NOTIFICATIONS -->
+    <div class="screen" id="screen-4">
+      <div class="screen-head">
+        <p class="eyebrow">Step 4 of delivery flow</p>
+        <h1 class="screen-title">Delivery confirmation &amp; notifications</h1>
+        <p class="screen-desc">Proof of delivery and the notification trail sent to the recipient across the flow.</p>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+            <div class="notif-ico" style="width:36px;height:36px;font-size:16px;">&#10003;</div>
+            <div><div class="notif-title" style="font-size:14px;">Delivered to confirmed drop-zone</div><div class="notif-time">Today, 2:47 PM · 218 Rutledge Ave</div></div>
+          </div>
+          <div class="tele" style="grid-template-columns:1fr 1fr;">
+            <div class="tele-item"><div class="tele-label">Drop accuracy</div><div class="tele-val">0.6 m from pin</div></div>
+            <div class="tele-item"><div class="tele-label">Total flight time</div><div class="tele-val">11:04</div></div>
+          </div>
+          <div class="btn-row"><button class="btn btn-ghost">View delivery photo</button></div>
+        </div>
+        <div class="card">
+          <label style="margin-bottom:10px;">Notifications</label>
+          <div class="notif"><div class="notif-ico">1</div><div><div class="notif-title">Order confirmed, drone dispatched</div><div class="notif-time">2:36 PM</div></div></div>
+          <div class="notif"><div class="notif-ico">2</div><div><div class="notif-title">Drone is 2 minutes away</div><div class="notif-time">2:45 PM</div></div></div>
+          <div class="notif"><div class="notif-ico">3</div><div><div class="notif-title">Delivered — photo attached</div><div class="notif-time">2:47 PM</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 5: EMERGENCY ABORT / RTB -->
+    <div class="screen" id="screen-5">
+      <div class="screen-head">
+        <p class="eyebrow">Safety control</p>
+        <h1 class="screen-title">Emergency abort &amp; return-to-base</h1>
+        <p class="screen-desc">Operator-facing control for aborting a delivery mid-flight when conditions become unsafe.</p>
+      </div>
+      <div class="grid2">
+        <div class="abort-panel">
+          <div class="alert-row"><span>Wind speed</span><span style="color:#E8A33D;font-family:var(--font-mono);">24 km/h — above threshold</span></div>
+          <div class="alert-row"><span>No-fly zone proximity</span><span style="font-family:var(--font-mono);">180 m — clear</span></div>
+          <div class="alert-row"><span>Battery reserve</span><span style="font-family:var(--font-mono);">61% — sufficient for RTB</span></div>
+          <div class="btn-row"><button class="btn btn-danger">Abort &amp; return to base</button><button class="btn btn-ghost">Hold position</button></div>
+          <p class="caption">Abort requires a second confirmation tap to prevent accidental triggers — error prevention applied to a safety-critical control.</p>
+        </div>
+        <div class="card">
+          <label style="margin-bottom:10px;">Why this screen exists</label>
+          <p class="caption" style="margin-top:0;">Weather/no-fly constraints were named directly in the Part 1 problem statement. This screen gives the drone operator a single, unambiguous control that surfaces the exact reason a flight might need to abort, supporting situation awareness under time pressure rather than burying the decision in a settings menu.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const steps = document.querySelectorAll('.step');
+  const screens = document.querySelectorAll('.screen');
+  function goTo(i){
+    steps.forEach(s=>s.classList.toggle('active', s.dataset.screen==String(i)));
+    screens.forEach(s=>s.classList.toggle('active', s.id==='screen-'+i));
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  steps.forEach(s=>s.addEventListener('click', ()=>goTo(s.dataset.screen)));
+
+  document.querySelectorAll('.zone-opt').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      opt.parentElement.querySelectorAll('.zone-opt').forEach(o=>o.classList.remove('selected'));
+      opt.classList.add('selected');
+    });
+  });
+</script>
+</body>
+</html>
